@@ -57,7 +57,9 @@ class ResPartner(models.Model):
         domain = [
             ("move_type", "=", "out_invoice"),
             ("company_id", "=", company_id),
-            ("commercial_partner_id", "=", self.commercial_partner_id.id),
+            # _origin: a partner not saved yet (onchange) has no invoices, and a
+            # NewId in a domain logs a warning
+            ("commercial_partner_id", "=", self.commercial_partner_id._origin.id),
             ("invoice_date_due", "<", today),
             ("state", "=", "posted"),
             ("payment_state", "in", ("not_paid", "partial")),

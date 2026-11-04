@@ -70,6 +70,11 @@ class TestPartnerFinancialRisk(BaseCommon):
                 "company_id": cls.env.company.id,
             }
         )
+        # The tests also run at install time, when the company may have no fiscal
+        # country yet or a non-US one (Italian chart): the tax must have the
+        # company's fiscal country.
+        if not cls.env.company.account_fiscal_country_id:
+            cls.env.company.account_fiscal_country_id = cls.env.ref("base.us")
         cls.tax = cls.env["account.tax"].create(
             {
                 "name": "Tax for sale 10%",
@@ -80,7 +85,7 @@ class TestPartnerFinancialRisk(BaseCommon):
                 .id,
                 "amount_type": "percent",
                 "amount": 10.0,
-                "country_id": cls.env.ref("base.us").id,
+                "country_id": cls.env.company.account_fiscal_country_id.id,
             }
         )
         cls.invoice = (

@@ -13,15 +13,41 @@ class TestSaleFinancialRiskInfo(BaseCommon):
         super().setUpClass()
         cls.Partner = cls.env["res.partner"]
         cls.Product = cls.env["product.product"]
+        # Own accounts and sale journal: the tests also run at install time on
+        # databases whose company has no chart of accounts yet.
+        cls.account_income = cls.env["account.account"].create(
+            {"name": "Test income", "code": "TSFRI700", "account_type": "income"}
+        )
+        cls.account_receivable = cls.env["account.account"].create(
+            {
+                "name": "Test receivable",
+                "code": "TSFRI430",
+                "account_type": "asset_receivable",
+                "reconcile": True,
+            }
+        )
+        cls.journal_sale = cls.env["account.journal"].create(
+            {
+                "name": "Test sale journal",
+                "code": "TSFRI",
+                "type": "sale",
+                "default_account_id": cls.account_income.id,
+            }
+        )
 
         cls.product_1 = cls.Product.create(
-            {"name": "Product test 1", "list_price": 1000.00}
+            {
+                "name": "Product test 1",
+                "list_price": 1000.00,
+                "property_account_income_id": cls.account_income.id,
+            }
         )
         cls.partner_1 = cls.Partner.create(
             {
                 "name": "partner test rebate 1",
                 "ref": "TST-001",
                 "risk_invoice_draft_include": True,
+                "property_account_receivable_id": cls.account_receivable.id,
             }
         )
         cls.invoice_partner_1 = cls.create_invoice(cls.partner_1)
@@ -32,6 +58,7 @@ class TestSaleFinancialRiskInfo(BaseCommon):
         simple_invoice = cls.env["account.move"].create(
             {
                 "move_type": "out_invoice",
+                "journal_id": cls.journal_sale.id,
                 "partner_id": partner.id,
                 "ref": "Test Customer Invoice",
                 "invoice_line_ids": [
